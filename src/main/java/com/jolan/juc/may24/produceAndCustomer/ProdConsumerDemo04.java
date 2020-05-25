@@ -11,6 +11,8 @@ package com.jolan.juc.may24.produceAndCustomer;
  *  1. 高内聚，低耦合前提下，线程操作资源类
  *  2. 判断 + 干活 + 通知
  *  3. 防止线程的虚假唤醒，只要有wait需要while判断
+ *
+ *  知识小总结 = 多线程编程 + while判断 + 新版写法
  */
 public class ProdConsumerDemo04{
     public static void main(String[] args) throws Exception{
