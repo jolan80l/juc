@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit;
  * @author FC Bayern Munich
  * @date 2020-05-2020/5/26 0026 9:15
  *
- *
+ *  1.一般获取FuterTask放在最后进行
  */
 public class CallableDemo {
     public static void main(String[] args) throws ExecutionException, InterruptedException {
@@ -22,9 +22,10 @@ public class CallableDemo {
 //        System.out.println(result);
 
         FutureTask<Integer> futureTask2 = new FutureTask<Integer>(new MyThread2());//加泛型
-        new Thread(futureTask2, "B").start();
+        new Thread(futureTask2, "A").start();
+        new Thread(futureTask2, "B").start();//同一个FutureTask只会调用一次，控制台会输出一次come in call
 
-        System.out.println("*******主线程结束");
+        System.out.println(Thread.currentThread().getName() + "*******主线程计算完成");
 
         Integer result2 = futureTask2.get();
         System.out.println(result2);
