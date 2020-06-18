@@ -25,7 +25,7 @@ package com.jolan.jvm.jun13;
  *
  * 7 堆
  *  7.1 一个JVM实例只存在一个堆内存，堆内存的大小是可以调解的。类加载器读取了类文件后，需要把类、方法、常变量放到堆内存中，保存所有引用类型的真是信息，以方便执行器执行。
- *      堆内存逻辑上分为三部分：新生+养老+永久（元空间）
+ *      堆内存逻辑上分为三部分：新生+养老+永久（元空间），物理上 = 新生 + 养老
  *  7.2
  *      Eden满了，开启GC = YGC = 轻GC ，YGC会把Eden区域基本清空
  *          S0(Survivor pace) = from
@@ -39,7 +39,11 @@ package com.jolan.jvm.jun13;
  *          2.清空Eden区和SurvivorFrom中的对象。
  *          3.SurvivorTo和SurvivorFrom交换：最后SurvivorTo和SurvivorFrom互换，原SurvivorTo成为下一次GC时的SurvivorFrom区。部分对象会在From和To区域中复制来复制去，如此交换15次（有JVM参数MaxTenuringThreshold
  *              决定，这个参数默认是15），最终如果还是存货，就存入老年代。
- *
+ *      实际而言，方法去（Method Area）和堆一样，是各个线程共享的内存区域，它用于存储虚拟机加载的：类信息+普通常量+静态常量+编译器编译后的代码等等，虽然JVM规范将方法去描述为堆的一个逻辑部分，但它却还有一个别名
+ *          叫做Non-Heap(非堆)，目的就是要和堆分开。对于HotSpot虚拟机，很多开发者习惯将方法区称之为“永久代（Parmanent Gen）”，但严格本质上说两者不同，或者说使用永久代来实现方法去而已，永久代是方法区（相当于
+ *          是一个接口interface）的一个实现，jdk1.7的版本中，已经将原本放在永久代的字符串常量移走。
+ *      永久区（java1.7之前）：永久区存储是一个常驻内存区域，用于存放JDK自身锁携带的Class，Interface的元数据，也就是说它存储的是运行环境必须的类信息，被装载仅此区域的数据是不会被垃圾回收器回收掉的，关闭JVM才会
+ *          释放此区域的内存。
  *
  *  */
 public class JVMNote {
