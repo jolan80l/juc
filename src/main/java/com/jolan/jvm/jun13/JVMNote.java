@@ -1,5 +1,7 @@
 package com.jolan.jvm.jun13;
 
+import java.util.Random;
+
 /**
  * @author jolan80
  * @date 2020-06-13 16:40
@@ -45,6 +47,72 @@ package com.jolan.jvm.jun13;
  *      永久区（java1.7之前）：永久区存储是一个常驻内存区域，用于存放JDK自身锁携带的Class，Interface的元数据，也就是说它存储的是运行环境必须的类信息，被装载仅此区域的数据是不会被垃圾回收器回收掉的，关闭JVM才会
  *          释放此区域的内存。
  *
+ * 8. 在java8中，永久代已经被移除，被一个成为元空间的区域所取代。元空间的本质和永久代类似。元空间与永久代之间最大的区别在于：永久代使用的JVM的堆内存，但是java8
+ *      以后的元空间并不在虚拟机中而是使用本机物理内存。因此，默认情况下，元空间的大小仅受本地内存限制。类的元数据放入native memory，字符串池和类的静态变量
+ *      放入java堆中，这样可以加载多少类的元数据就不再有MaxPermSize控制，而有系统的实际可用空间来控制。
+ *
+ * 9. -Xms:设置初始分配大小，默认为物理内存的1/64
+ *    -Xmx:最大分配内存，默认为物理内存的1/4
+ *    -XX:+PrintGCDetails:输出详细的GC处理日志
+ *    一次GC日志分析：
+ *      YongGC：
+ *      [PSYoungGen: 1991K->489K(2560K)] 1991K->833K(9728K), 0.0326066 secs] [Times: user=0.00 sys=0.00, real=0.03 secs]
+ *          PSYoungGen：GC的类型，这里表示yangGC
+ *          1991K->489K(2560K)：表示GC前伊甸区占用1991K，GC后占用489K，伊甸区总大小为2560K
+ *          1991K->833K(9728K)：表示GC前堆内存占用为1991K，GC后占用为833K，堆内存总大小为9728K
+ *          0.0326066 secs：GC耗时
+ *          Times: user=0.00 sys=0.00, real=0.03 secs：user表示用户耗时，sys表示系统耗时，real表示实际耗时
+ *      FullGC：
+ *  *      [Full GC (Allocation Failure) [PSYoungGen: 0K->0K(1536K)] [ParOldGen: 3569K->3553K(7168K)] 3569K->3553K(8704K), [Metaspace: 2962K->2962K(1056768K)], 0.0115174 secs] [Times: user=0.13 sys=0.00, real=0.01 secs]
+ *              Full GC (Allocation Failure：GC类型
+ *              PSYoungGen: 0K->0K(1536K)：回收前0k，回收后0k，总大小为1536k
+ *              ParOldGen: 3569K->3553K(7168K)：3569K表示回收前，3553K表示回收后，7168K表示总大小
+ *              3569K->3553K(8704K)：3569K表示GC回收前的堆大小，3553K表示回收后的堆大小，8704K表示堆总大小
+ *              Metaspace: 2962K->2962K(1056768K):元空间或永久代，GC前空间2962K，GC后空间2962K，总空间1056768K
+ *              0.0115174 secs:GC总时间
+ *              Times: user=0.13 sys=0.00, real=0.01 secs：用户时间0.13 ，系统时间0.00，实际时间0.01
+ *
+ * 9. GC四大算法：
+ *  9.1 引用计数法
+ *      每有对象引用时计数器+1，当没有被对象引用时候，可以被回收。
+ *      缺点：每次对对象赋值时均要维护引用计数器，且计数器本身也有一定的消耗；较难处理循环引用；
+ *  9.2 复制算法（Copying）
+ *      年轻代中使用的是Minor GC，这种GC算法采用的是复制算法算法（Copying）。复制算法不会产生内存碎片，缺点是耗费空间。如果对象存活率高，会非常浪费时间。
+ *  9.3 标记清除（Mark-Sweep）
+ *      老年代一般是由标记清除或者是标记清除与标记整理的混合实现。分为标记和清除两个阶段，先标记出要回收的对象，然后统一回收这些对象。
+ *      优点是节约内存空间，缺点是会产生内存碎片，扫描两次比较耗时
+ *  9.4 标记压缩（Mark-Compact）
+ *       全称标记清除压缩算法，简称标记整理算法。比标记清除算法多了整理的步骤。缺点是耗时较长。
+ *       在标记清除的基础上，再次扫描，并往一段滑动存活对象
+ *
  *  */
 public class JVMNote {
+    public static void main(String[] args) {
+//        getJVMParams();
+        testOOM1();
+//        testOOM2();
+        return;
+    }
+
+    private static void testOOM2() {
+        byte[] bytes = new byte[40 * 1024 *1024];
+        return;
+    }
+
+    private static void testOOM1() {
+        String str = "www.jolan.com";
+        while (true){
+            //-Xms10m -Xmx10m -XX:+PrintGCDetails
+            //调整jvm参数为10M，java.lang.OutOfMemoryError: Java heap space
+            str += str + new Random().nextInt(88888888) + new Random().nextInt(999999999);
+        }
+    }
+
+    private static void getJVMParams() {
+        System.out.println(Runtime.getRuntime().availableProcessors());//获取cpu核数
+        long maxMemory = Runtime.getRuntime().maxMemory();//返回java虚拟机试图使用的最大内存
+        long totalMemory = Runtime.getRuntime().totalMemory();//返回java虚拟机中的默认内存总量
+        System.out.println("-Xmx:MAX_MEMORY = " + maxMemory + "(字节)、" + (maxMemory / (double)1024/1024) + "MB");
+        System.out.println("-Xms:TOTAL_MEMORY = " + totalMemory + "(字节)、" + (totalMemory / (double)1024/1024) + "MB");
+    }
 }
